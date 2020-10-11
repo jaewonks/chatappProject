@@ -92,6 +92,7 @@ io.on("connection", socket => {
    })
 })
 
+//node js쪽에서 정적 파일을 제공해주지 못하기때문에 필요한 코드
 //use this to show the image you have in node js server to client (react js)
 //https://stackoverflow.com/questions/48914987/send-image-path-from-node-js-express-server-to-react-client
 app.use('/upload', express.static('upload'));
