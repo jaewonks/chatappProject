@@ -12,11 +12,26 @@ const config = require("./config/key");
 
 const { Chat } = require('./models/Chat')
 
-// const mongoose = require("mongoose");
-// mongoose
-//   .connect(config.mongoURI, { useNewUrlParser: true })
-//   .then(() => console.log("DB connected"))
-//   .catch(err => console.error(err));
+const fs = require('fs');
+const multer = require('multer')
+const { auth } = require('./middleware/auth')
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'upload/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}_${file.originalname}`)
+  },
+  fileFilter: (req, file, cd) => {
+    const ext = path.extname(file.originalname)
+    if(ext !== '.jpg' && ext !== '.png' && ext !== '.mp4'){
+      return cd(res.status(400).end('Only jpg, png, mp4 is allowed'), false)
+    }
+    cd(null, true)
+  }
+})
+const upload = multer({ storage: storage }).single('file')
 
 const mongoose = require("mongoose");
 const connect = mongoose.connect(config.mongoURI,
@@ -37,8 +52,19 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+//프론트엔드에서 보내는 정보를 처리(axios)
 app.use('/api/users', require('./routes/users'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/product', require('./routes/product'));
+
+app.post('/api/chat/uploadfiles', auth ,(req, res) => {
+    upload(req, res, err => {
+      if(err) {
+        return res.json({ success: false, err })
+      }
+      return res.json({ success:true, url: res.req.file.path })
+    })
+});
 
 io.on("connection", socket => {
     socket.on("Input Chat Message", msg => {
@@ -46,7 +72,7 @@ io.on("connection", socket => {
         try{
           let chat = new Chat({ 
             message: msg.chatMessage,
-            sender: msg.userID,
+            sender: msg.userId,
             type: msg.type
           })
           //정보를 DB에 저장한다.
@@ -68,6 +94,7 @@ io.on("connection", socket => {
 
 //use this to show the image you have in node js server to client (react js)
 //https://stackoverflow.com/questions/48914987/send-image-path-from-node-js-express-server-to-react-client
+app.use('/upload', express.static('upload'));
 app.use('/uploads', express.static('uploads'));
 
 // Serve static assets if in production
