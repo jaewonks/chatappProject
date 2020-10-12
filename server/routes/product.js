@@ -106,4 +106,19 @@ router.post('/products', (req, res) => {
   }
 })
 
+//axios.get(`/api/product/products_by_id?id=${productId}&type=single`)
+ //DetailProductPage에 화면을 보여준다
+ router.get('/products_by_id', (req, res) => {
+  //productId를 이용해서 DB에서 productId와 같은 상품의 정보를 가져온다(query이용)
+    let type = req.query.type
+    let productId = req.query.id 
+
+    Product.find({ _id: productId })
+      .populate('writer') //ObjectId를 통해 ()안의 모든 정보를 가져올 수 있다.
+      .exec((err, product) => {
+        if (err) return res.status(400).json({ success: false, err })
+        return res.status(200).json({ success: true, product})
+    })
+})
+
 module.exports = router;
