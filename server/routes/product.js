@@ -48,6 +48,7 @@ router.post('/products', (req, res) => {
   //랜딩페이지에 보여질 skip과 limit
   let limit = req.body.limit ? parseInt(req.body.limit) : 20
   let skip = req.body.skip ? parseInt(req.body.skip) : 0
+  let searchTerm = req.body.searchTerm
 
   let findArgs = {}
  /*  const [Filters, setFilters] = useState({
@@ -72,19 +73,37 @@ router.post('/products', (req, res) => {
   }
   console.log(findArgs)
   
-  //DB product collection에 있는 모든 상품 정보를 불러오기
-  Product.find(findArgs)
-    .populate('writer') //ObjectId를 통해 ()안의 모든 정보를 가져올 수 있다.
-    .limit(limit)
-    .skip(skip)
-    .exec((err, productInfo) => {
-      if(err) return res.status(400).json({ success: false, err })
-      return res.status(200)
-                .json({ success: true, 
-                        productInfo,  
-                        postRange: productInfo.length
+  if(searchTerm){
+      //DB product collection에 있는 모든 상품 정보를 불러오기
+      Product.find(findArgs)
+      .find({ $text: { $search: searchTerm } }) //mongoDB에서 제공하는 기능
+      .populate('writer') //ObjectId를 통해 ()안의 모든 정보를 가져올 수 있다.
+      .limit(limit)
+      .skip(skip)
+      .exec((err, productInfo) => {
+        if(err) return res.status(400).json({ success: false, err })
+        return res.status(200)
+                  .json({ success: true, 
+                          productInfo,  
+                          postRange: productInfo.length
+        })
       })
-    })
+
+  } else {
+      //DB product collection에 있는 모든 상품 정보를 불러오기
+      Product.find(findArgs)
+      .populate('writer') //ObjectId를 통해 ()안의 모든 정보를 가져올 수 있다.
+      .limit(limit)
+      .skip(skip)
+      .exec((err, productInfo) => {
+        if(err) return res.status(400).json({ success: false, err })
+        return res.status(200)
+                  .json({ success: true, 
+                          productInfo,  
+                          postRange: productInfo.length
+        })
+      })
+  }
 })
 
 module.exports = router;
