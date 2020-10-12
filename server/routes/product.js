@@ -45,12 +45,45 @@ router.post('/image', (req, res) => {
 
 //Landing page에 상품 나열하기
 router.post('/products', (req, res) => {
+  //랜딩페이지에 보여질 skip과 limit
+  let limit = req.body.limit ? parseInt(req.body.limit) : 20
+  let skip = req.body.skip ? parseInt(req.body.skip) : 0
+
+  let findArgs = {}
+ /*  const [Filters, setFilters] = useState({
+    continents: [],
+    price: []
+  }) */
+  for( let key in req.body.filters) {
+    if(req.body.filters[key].length > 0){ //배열이 있을 경우
+      
+      console.log('key: ', key)
+      if(key === 'price') {
+            findArgs[key] = {
+            //Greater than equal
+            $gte: req.body.filters[key][0],
+            //Less than equal
+            $lte: req.body.filters[key][1]
+          }
+      } else {
+        findArgs[key] = req.body.filters[key]
+      }
+    }
+  }
+  console.log(findArgs)
+  
   //DB product collection에 있는 모든 상품 정보를 불러오기
-  Product.find()
+  Product.find(findArgs)
     .populate('writer') //ObjectId를 통해 ()안의 모든 정보를 가져올 수 있다.
+    .limit(limit)
+    .skip(skip)
     .exec((err, productInfo) => {
       if(err) return res.status(400).json({ success: false, err })
-      return res.status(200).json({ success: true, productInfo })
+      return res.status(200)
+                .json({ success: true, 
+                        productInfo,  
+                        postRange: productInfo.length
+      })
     })
 })
 
