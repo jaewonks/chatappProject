@@ -116,30 +116,35 @@ router.post("/addToCart", auth, (req, res) => {
         })
 })
 
-router.post("/removeFromCart", auth, (req, res) => {
-    //cart에서 remove버튼을 누른 상품을 지운다
-    User.findOneAndUpdate(
-        {_id: req.user._id},
-        { "$pull": 
-            { "cart": { "id": req.query.id } ///api/product/removeFromCart?id=${product_id}
+router.get('/removeFromCart', auth, (req, res) => {
 
-            }
-        }, 
-        { new:true }, //업데이트된 값을 가지기 위함
+    //먼저 cart안에 내가 지우려고 한 상품을 지워주기 
+    User.findOneAndUpdate(
+        { _id: req.user._id },
+        {
+            "$pull":
+                { "cart": { "id": req.query.id } }
+        },
+        { new: true },
         (err, userInfo) => {
-            let cart = userInfo.cart
+            let cart = userInfo.cart;
             let array = cart.map(item => {
                 return item.id
             })
-        product.find({ _id: { $in: array } }) 
-            .populate('writer')
-            .exec((err, productInfo) => {
-                return res.status(200).json({
-                    productInfo,
-                    cart
-                })  
-            })
-            })
-        })
+
+            //product collection에서  현재 남아있는 상품들의 정보를 가져오기 
+
+            //productIds = ['5e8961794be6d81ce2b94752', '5e8960d721e2ca1cb3e30de4'] 이런식으로 바꿔주기
+            Product.find({ _id: { $in: array } })
+                .populate('writer')
+                .exec((err, productInfo) => {
+                    return res.status(200).json({
+                        productInfo,
+                        cart
+                    })
+                })
+        }
+    )
+})
 
 module.exports = router;
